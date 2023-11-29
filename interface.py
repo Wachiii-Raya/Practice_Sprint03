@@ -94,12 +94,14 @@ class PackageConverter:
 
 
 
-class UiController:
+class UiController(PackageConverter):
 	def __init__(self):
 		self.serialHandler = serial.Serial()
 		self.potentioMeterValue = 0
 		self.servoAngle = 0
 		self.syncMode = False
+		self.currentLEDOjbect = self.get_LED_object_template(num_leds=3)
+		self.heartBeatDelay = 0
   
   
 	# def __init__(self, serialPort, baudRate):
@@ -111,31 +113,59 @@ class UiController:
   
 	def render(self):
 		with dpg.window(label="Arduino Control", height=400, width=300):
-			# dpg.add_button(label="Sync Mode", callback=self.cb_sync_mode, tag="sync_mode")
-			# dpg.add_button(label="LED 1", callback=self.cb_toggle_led, tag="1000")
-			# dpg.add_button(label="LED 2", callback=self.cb_toggle_led, tag="2000")
-			# dpg.add_button(label="LED 3", callback=self.cb_toggle_led, tag="3000")
-			# dpg.add_slider_int(label="LED Heartbeat", callback=self.cb_set_heartbeat_frequency, min_value=1, max_value=100)
-			# dpg.add_slider_int(label="Servo Angle", callback=self.cb_set_servo_angle, min_value=0, max_value=180)
+			dpg.add_button(label="LED 1", callback=self.cb_toggle_led, tag="LED_1")
+			dpg.add_button(label="LED 2", callback=self.cb_toggle_led, tag="LED_2")
+			dpg.add_button(label="LED 3", callback=self.cb_toggle_led, tag="LED_3")
+			dpg.add_slider_int(label="LED Heartbeat", callback=self.cb_set_heartbeat_delay, min_value=1, max_value=100)
+			dpg.add_slider_int(label="Servo Angle", callback=self.cb_set_servo_angle, min_value=0, max_value=180)
 			with dpg.group(horizontal=True):
 				dpg.add_text("Potentiometer Value:")
 				dpg.add_text("", tag="Potentiometer Value")
-		with dpg.window(label="Potentiometer Value", height=400, width=800):
-				with dpg.plot(label="Plot", height=-1, width=-1):
-					dpg.add_plot_legend()
-					x_axis = dpg.add_plot_axis(dpg.mvXAxis, label="x", tag="x_axis",no_tick_labels=True)
-					y_axis = dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="y_axis")
-					# dpg.set_axis_limits(y_axis, 0, 1023)
-					
-					# dpg.add_line_series(self.data_x, self.data_y, label="Potentiometer Value", parent="y_axis", tag="tag_plot")
+    
 
+	def cb_toggle_led(self, sender):
+		led_object = self.currentLEDOjbect
+		led_object[sender] = not led_object[sender]				# toggle the LED
+		led_byte = self.convert_LED_object_to_LED_byte(led_object)
+		# ------------send package----------------#
+		template_package_object = self.get_package_object_template()
+		template_package_object["device"] = PackageDevive.LED
+		template_package_object["flag"] = PackageFlag.WRITE
+		template_package_object["payload"] = led_byte
+		# self.serialHandler.write(template_package_object)
+		# print(led_object)
+  
+  
+	def cb_set_heartbeat_delay(self, sender):
+		self.heartBeatDelay = sender
+		# ------------send package----------------#
+		template_package_object = self.get_package_object_template()
+		template_package_object["device"] = PackageDevive.HEARTBEAT
+		template_package_object["flag"] = PackageFlag.WRITE
+		template_package_object["payload"] = bytearray([self.heartBeatDelay])
+		# self.serialHandler.write(template_package_object)
+
+
+	def cb_set_servo_angle(self, sender):
+		self.servoAngle = sender
+		# ------------send package----------------#
+		template_package_object = self.get_package_object_template()
+		template_package_object["device"] = PackageDevive.SERVO
+		template_package_object["flag"] = PackageFlag.WRITE
+		template_package_object["payload"] = bytearray([self.servoAngle])
+		# self.serialHandler.write(template_package_object)
+  
+  
+	
+
+ 
 
 	def update(self):
 		#try:
 		potentiometer_value = 1000
 
 		# potentiometer_value = self.ser.readline().decode('utf-8', 'ignore').strip()
-		print(int(potentiometer_value))			
+		# print(int(potentiometer_value))			
 			
 		# except Exception as e:
 		#     print(e)
@@ -205,5 +235,5 @@ if __name__ == '__main__':
 	# print(package_object)
 	# package_bytes = PackageConverter.convert_package_object_to_package_bytes(package_object)
 	# print(package_bytes)
- 	# ---------------Test: test ui----------------#
+ 	# ---------------Test: test ui in ui class----------------#
 	main()
