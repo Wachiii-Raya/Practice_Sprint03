@@ -154,11 +154,7 @@ class UiController(PackageConverter):
 		template_package_object["flag"] = PackageFlag.WRITE
 		template_package_object["payload"] = bytearray([self.servoAngle])
 		# self.serialHandler.write(template_package_object)
-  
-  
-	
 
- 
 
 	def update(self):
 		#try:
@@ -208,13 +204,13 @@ def main():
 
 if __name__ == '__main__':
 	# ---------------Test: LED function----------------#
-	# PackageConverter = PackageConverter()
-	# led_object = PackageConverter.get_LED_object_template(3)
-	# led_object["LED_1"] = True
-	# led_object["LED_3"] = True
-	# print(led_object)
-	# led_byte = PackageConverter.convert_LED_object_to_LED_byte(led_object)
-	# print(led_byte)
+	PackageConverter = PackageConverter()
+	led_object = PackageConverter.get_LED_object_template(3)
+	led_object["LED_1"] = True
+	led_object["LED_3"] = True
+	print(led_object)
+	led_byte = PackageConverter.convert_LED_object_to_LED_byte(led_object)
+	print(led_byte)
 	# ---------------Test: Flag Mode function----------------#
 	# PackageConverter = PackageConverter()
 	# flag_object = PackageConverter.get_flag_object_template()
@@ -236,4 +232,4 @@ if __name__ == '__main__':
 	# package_bytes = PackageConverter.convert_package_object_to_package_bytes(package_object)
 	# print(package_bytes)
  	# ---------------Test: test ui in ui class----------------#
-	main()
+	# main()
