@@ -1,6 +1,7 @@
 from threading import Thread
 import dearpygui.dearpygui as dpg
 import serial 
+import numpy as np
 import enum
 
 
@@ -95,9 +96,84 @@ class PackageConverter:
 
 class UiController:
 	def __init__(self):
-
+		self.serialHandler = serial.Serial()
+		self.potentioMeterValue = 0
+		self.servoAngle = 0
+		self.syncMode = False
   
+  
+	# def __init__(self, serialPort, baudRate):
+	# 	self.serialHandler = serial.Serial(serialPort, baudRate)
+	# 	self.potentioMeterValue = 0
+	# 	self.servoAngle = 0
+	# 	self.syncMode = False
+  
+  
+	def render(self):
+		with dpg.window(label="Arduino Control", height=400, width=300):
+			# dpg.add_button(label="Sync Mode", callback=self.cb_sync_mode, tag="sync_mode")
+			# dpg.add_button(label="LED 1", callback=self.cb_toggle_led, tag="1000")
+			# dpg.add_button(label="LED 2", callback=self.cb_toggle_led, tag="2000")
+			# dpg.add_button(label="LED 3", callback=self.cb_toggle_led, tag="3000")
+			# dpg.add_slider_int(label="LED Heartbeat", callback=self.cb_set_heartbeat_frequency, min_value=1, max_value=100)
+			# dpg.add_slider_int(label="Servo Angle", callback=self.cb_set_servo_angle, min_value=0, max_value=180)
+			with dpg.group(horizontal=True):
+				dpg.add_text("Potentiometer Value:")
+				dpg.add_text("", tag="Potentiometer Value")
+		with dpg.window(label="Potentiometer Value", height=400, width=800):
+				with dpg.plot(label="Plot", height=-1, width=-1):
+					dpg.add_plot_legend()
+					x_axis = dpg.add_plot_axis(dpg.mvXAxis, label="x", tag="x_axis",no_tick_labels=True)
+					y_axis = dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="y_axis")
+					# dpg.set_axis_limits(y_axis, 0, 1023)
+					
+					# dpg.add_line_series(self.data_x, self.data_y, label="Potentiometer Value", parent="y_axis", tag="tag_plot")
 
+
+	def update(self):
+		#try:
+		potentiometer_value = 1000
+
+		# potentiometer_value = self.ser.readline().decode('utf-8', 'ignore').strip()
+		print(int(potentiometer_value))			
+			
+		# except Exception as e:
+		#     print(e)
+		dpg.set_value("Potentiometer Value", potentiometer_value)
+
+
+	def run(self):
+		while True:
+			self.update()
+
+ 
+	def start(self):
+		self.__thread = Thread(target=self.run)
+		self.__thread.start()
+
+ 
+def ui_init():
+	dpg.create_context()
+	dpg.create_viewport(title='Main UI', height=600, width=1200)
+	dpg.setup_dearpygui()
+
+
+def ui_draw():
+	arduino_ui = UiController()
+	arduino_ui.render()
+	arduino_ui.start()
+	
+
+def ui_startRenderer():
+	dpg.show_viewport()
+	dpg.start_dearpygui()
+	dpg.destroy_context()
+
+
+def main():
+	ui_init()
+	ui_draw()
+	ui_startRenderer()
 
 
 if __name__ == '__main__':
@@ -118,14 +194,16 @@ if __name__ == '__main__':
 	# flag_object = PackageConverter.convert_flag_byte_to_flag_object(flag_byte)
 	# print(flag_object)
 	# ---------------Test: Package function----------------#
-	PackageConverter = PackageConverter()
-	package_object = PackageConverter.get_package_object_template()
-	package_object["device"] = PackageDevive.LED
-	package_object["flag"] = PackageFlag.WRITE
-	led_object = PackageConverter.get_LED_object_template(3)
-	led_object["LED_1"] = True
-	led_object["LED_3"] = True
-	package_object["payload"] = PackageConverter.convert_LED_object_to_LED_byte(led_object)
-	print(package_object)
-	package_bytes = PackageConverter.convert_package_object_to_package_bytes(package_object)
-	print(package_bytes)
+	# PackageConverter = PackageConverter()
+	# package_object = PackageConverter.get_package_object_template()
+	# package_object["device"] = PackageDevive.LED
+	# package_object["flag"] = PackageFlag.WRITE
+	# led_object = PackageConverter.get_LED_object_template(3)
+	# led_object["LED_1"] = True
+	# led_object["LED_3"] = True
+	# package_object["payload"] = PackageConverter.convert_LED_object_to_LED_byte(led_object)
+	# print(package_object)
+	# package_bytes = PackageConverter.convert_package_object_to_package_bytes(package_object)
+	# print(package_bytes)
+ 	# ---------------Test: test ui----------------#
+	main()
