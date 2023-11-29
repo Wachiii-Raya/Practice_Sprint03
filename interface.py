@@ -5,7 +5,7 @@ import numpy as np
 import enum
 
 
-class PackageDevive(enum.Enum):
+class PackageDevice(enum.Enum):
 	UNDIFINED = bytearray(b'\x00')
 	POTENTIOMETER = bytearray(b'\x01')
 	SERVO = bytearray(b'\x02')
@@ -28,7 +28,7 @@ class PackageConverter:
  
 	def get_package_object_template(self):
 		package_object = {
-			"device": PackageDevive.UNDIFINED,
+			"device": PackageDevice.UNDIFINED,
 			"flag": PackageFlag.UNDEFINED,
 			"payload" : bytearray(0)
 		}
@@ -95,8 +95,8 @@ class PackageConverter:
 
 
 class UiController(PackageConverter):
-	def __init__(self):
-		self.serialHandler = serial.Serial()
+	def __init__(self, serialPort, baudRate):
+		self.serialHandler = serial.Serial(serialPort, baudRate)
 		self.potentioMeterValue = 0
 		self.servoAngle = 0
 		self.syncMode = False
@@ -129,10 +129,13 @@ class UiController(PackageConverter):
 		led_byte = self.convert_LED_object_to_LED_byte(led_object)
 		# ------------send package----------------#
 		template_package_object = self.get_package_object_template()
-		template_package_object["device"] = PackageDevive.LED
+		template_package_object["device"] = PackageDevice.LED
 		template_package_object["flag"] = PackageFlag.WRITE
 		template_package_object["payload"] = led_byte
-		# self.serialHandler.write(template_package_object)
+		package_bytes = self.convert_package_object_to_package_bytes(template_package_object)
+  
+		self.serialHandler.write((package_bytes))
+		print(f"package byte led: {package_bytes}")
 		# print(led_object)
   
   
@@ -140,27 +143,31 @@ class UiController(PackageConverter):
 		self.heartBeatDelay = sender
 		# ------------send package----------------#
 		template_package_object = self.get_package_object_template()
-		template_package_object["device"] = PackageDevive.HEARTBEAT
+		template_package_object["device"] = PackageDevice.HEARTBEAT
 		template_package_object["flag"] = PackageFlag.WRITE
 		template_package_object["payload"] = bytearray([self.heartBeatDelay])
+  
 		# self.serialHandler.write(template_package_object)
 
 
 	def cb_set_servo_angle(self, sender):
-		self.servoAngle = sender
+		self.servoAngle = dpg.get_value(sender)
 		# ------------send package----------------#
 		template_package_object = self.get_package_object_template()
-		template_package_object["device"] = PackageDevive.SERVO
+		template_package_object["device"] = PackageDevice.SERVO
 		template_package_object["flag"] = PackageFlag.WRITE
 		template_package_object["payload"] = bytearray([self.servoAngle])
-		# self.serialHandler.write(template_package_object)
+		package_bytes = self.convert_package_object_to_package_bytes(template_package_object)
+  
+		self.serialHandler.write(package_bytes)
+		print(f"package byte servo: {package_bytes}")
 
 
 	def update(self):
 		#try:
-		potentiometer_value = 1000
+		# potentiometer_value = 1000
 
-		# potentiometer_value = self.ser.readline().decode('utf-8', 'ignore').strip()
+		potentiometer_value = self.serialHandler.readline().decode('utf-8', 'ignore').strip()
 		# print(int(potentiometer_value))			
 			
 		# except Exception as e:
@@ -185,7 +192,7 @@ def ui_init():
 
 
 def ui_draw():
-	arduino_ui = UiController()
+	arduino_ui = UiController("COM6", 9600)
 	arduino_ui.render()
 	arduino_ui.start()
 	
@@ -204,13 +211,13 @@ def main():
 
 if __name__ == '__main__':
 	# ---------------Test: LED function----------------#
-	PackageConverter = PackageConverter()
-	led_object = PackageConverter.get_LED_object_template(3)
-	led_object["LED_1"] = True
-	led_object["LED_3"] = True
-	print(led_object)
-	led_byte = PackageConverter.convert_LED_object_to_LED_byte(led_object)
-	print(led_byte)
+	# PackageConverter = PackageConverter()
+	# led_object = PackageConverter.get_LED_object_template(3)
+	# led_object["LED_1"] = True
+	# led_object["LED_3"] = True
+	# print(led_object)
+	# led_byte = PackageConverter.convert_LED_object_to_LED_byte(led_object)
+	# print(led_byte)
 	# ---------------Test: Flag Mode function----------------#
 	# PackageConverter = PackageConverter()
 	# flag_object = PackageConverter.get_flag_object_template()
@@ -232,4 +239,4 @@ if __name__ == '__main__':
 	# package_bytes = PackageConverter.convert_package_object_to_package_bytes(package_object)
 	# print(package_bytes)
  	# ---------------Test: test ui in ui class----------------#
-	# main()
+	main()
